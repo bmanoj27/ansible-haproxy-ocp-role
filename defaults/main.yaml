@@ -1,0 +1,21 @@
+---
+# List of master nodes
+haproxy_masters:
+  - { name: "master01", ip: "192.168.18.232" }
+  - { name: "master02", ip: "192.168.18.233" }
+  - { name: "master03", ip: "192.168.18.234" }
+
+# List of worker nodes
+haproxy_workers:
+  - { name: "worker01", ip: "192.168.18.235" }
+  - { name: "worker02", ip: "192.168.18.236" }
+  - { name: "worker03", ip: "192.168.18.237" }
+#Add add more workers if needed
+# - { name: "worker03", ip: "192.168.18.238" }
+
+# ports
+haproxy_api_port: 6443
+haproxy_mcs_port: 22623
+haproxy_ingress_http: 80
+haproxy_ingress_https: 443
+haproxy_stats_port: 32700

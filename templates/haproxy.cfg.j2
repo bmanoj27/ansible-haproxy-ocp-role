@@ -1,0 +1,136 @@
+#---------------------------------------------------------------------
+# MANAGED BY ANSIBLE!!! .  See the
+# full configuration options online.
+#
+#   https://www.haproxy.org/download/1.8/doc/configuration.txt
+#
+#---------------------------------------------------------------------
+
+#---------------------------------------------------------------------
+# Global settings
+#---------------------------------------------------------------------
+global
+    # to have these messages end up in /var/log/haproxy.log you will
+    # need to:
+    #
+    # 1) configure syslog to accept network log events.  This is done
+    #    by adding the '-r' option to the SYSLOGD_OPTIONS in
+    #    /etc/sysconfig/syslog
+    #
+    # 2) configure local2 events to go to the /var/log/haproxy.log
+    #   file. A line like the following can be added to
+    #   /etc/sysconfig/syslog
+    #
+    #    local2.*                       /var/log/haproxy.log
+    #
+    log         127.0.0.1 local2
+
+    chroot      /var/lib/haproxy
+    pidfile     /var/run/haproxy.pid
+    maxconn     20000
+    user        haproxy
+    group       haproxy
+    daemon
+
+    # turn on stats unix socket
+    stats socket /var/lib/haproxy/stats
+
+    # utilize system-wide crypto-policies
+    ssl-default-bind-ciphers PROFILE=SYSTEM
+    ssl-default-server-ciphers PROFILE=SYSTEM
+
+#---------------------------------------------------------------------
+# common defaults that all the 'listen' and 'backend' sections will
+# use if not designated in their block
+#---------------------------------------------------------------------
+defaults
+    mode                    http
+    log                     global
+    option                  httplog
+    option                  dontlognull
+    option http-server-close
+    option forwardfor       except 127.0.0.0/8
+    option                  redispatch
+    retries                 3
+    timeout http-request    10s
+    timeout queue           1m
+    timeout connect         10s
+    timeout client          1m
+    timeout server          1m
+    timeout http-keep-alive 10s
+    timeout check           10s
+    maxconn                 20000
+
+
+#---------------------------------------------------------------------
+# round robin balancing for OCP Kubernetes API Server
+#---------------------------------------------------------------------
+ frontend k8s_api
+   bind *:{{ haproxy_api_port }}
+   mode tcp
+   default_backend k8s_api_backend
+ backend k8s_api_backend
+   balance roundrobin
+   mode tcp
+#   server bootstrap 192.168.18.231:6443 check
+
+{% for master in haproxy_masters %}
+    server {{ master.name }} {{ master.ip }}:{{ haproxy_api_port }} check
+{% endfor %}
+
+# ---------------------------------------------------------------------
+# round robin balancing for OCP Machine Config Server
+# ---------------------------------------------------------------------
+ frontend machine_config
+   bind *:{{ haproxy_mcs_port }}
+   mode tcp
+   default_backend machine_config_backend
+ backend machine_config_backend
+   balance roundrobin
+   mode tcp
+#   server bootstrap 192.168.18.231:22623 check
+
+{% for master in haproxy_masters %}
+    server {{ master.name }} {{ master.ip }}:{{ haproxy_mcs_port }} check
+{% endfor %}
+
+# ---------------------------------------------------------------------
+# round robin balancing for OCP Ingress Insecure Port
+# ---------------------------------------------------------------------
+ frontend ingress_insecure
+   bind *:{{ haproxy_ingress_http }}
+   mode tcp
+   default_backend ingress_insecure_backend
+ backend ingress_insecure_backend
+   balance roundrobin
+   mode tcp
+
+{% for worker in haproxy_workers %}
+    server {{ worker.name }} {{ worker.ip }}:{{ haproxy_ingress_http }} check
+{% endfor %}
+
+
+# ---------------------------------------------------------------------
+# round robin balancing for OCP Ingress Secure Port
+# ---------------------------------------------------------------------
+ frontend ingress_secure
+   bind *:{{ haproxy_ingress_https }}
+   mode tcp
+   default_backend ingress_secure_backend
+ backend ingress_secure_backend
+   balance roundrobin
+   mode tcp
+
+{% for worker in haproxy_workers %}
+    server {{ worker.name }} {{ worker.ip }}:{{ haproxy_ingress_https }} check
+{% endfor %}
+
+
+# ---------------------------------------------------------------------
+# Exposing HAProxy Statistic Page
+# ---------------------------------------------------------------------
+ listen stats
+     bind :{{ haproxy_stats_port }}
+     stats enable
+     stats uri /
+     stats refresh 10000ms
