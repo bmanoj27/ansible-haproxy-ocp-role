@@ -1,0 +1,23 @@
+---
+galaxy_info:
+  role_name: ansible-haproxy-ocp-role
+  author: bmanoj27
+  description: "HAProxy Load Balancer role for OpenShift UPI clusters"
+  license: MIT
+
+  min_ansible_version: "2.9"
+
+  platforms:
+    - name: EL
+      versions:
+        - 8
+        - 9
+
+  galaxy_tags:
+    - haproxy
+    - openshift
+    - ocp
+    - loadbalancer
+    - kubernetes
+
+dependencies: []
