@@ -10,6 +10,9 @@ An Ansible role to install and configure HAProxy as a load balancer for OpenShif
 - Dynamic master/worker lists
 
 ## Usage
+
+Modify the defaults/main.yaml to have your own hostnames and IP addresses.
+
 ```yaml
 - hosts: haproxy
   roles:
