@@ -70,8 +70,6 @@ defaults
  backend k8s_api_backend
    balance roundrobin
    mode tcp
-#   server bootstrap 192.168.18.231:6443 check
-
 {% for master in haproxy_masters %}
     server {{ master.name }} {{ master.ip }}:{{ haproxy_api_port }} check
 {% endfor %}
