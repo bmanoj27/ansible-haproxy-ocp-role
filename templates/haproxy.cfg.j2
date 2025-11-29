@@ -28,6 +28,7 @@ global
     chroot      /var/lib/haproxy
     pidfile     /var/run/haproxy.pid
     maxconn     20000
+    nbthread    4
     user        haproxy
     group       haproxy
     daemon
@@ -44,22 +45,19 @@ global
 # use if not designated in their block
 #---------------------------------------------------------------------
 defaults
-    mode                    http
+    mode                    tcp
     log                     global
-    option                  httplog
+    option                  tcplog
     option                  dontlognull
-    option http-server-close
-    option forwardfor       except 127.0.0.0/8
-    option                  redispatch
-    retries                 3
-    timeout http-request    10s
-    timeout queue           1m
+
+    # Use TCP keepalive (important for kubelet/API)
+    option                  tcpka
     timeout connect         10s
     timeout client          1m
     timeout server          1m
-    timeout http-keep-alive 10s
     timeout check           10s
     maxconn                 20000
+    default-server          inter 3s fall 3 rise 2 maxconn 2000
 
 
 #---------------------------------------------------------------------
